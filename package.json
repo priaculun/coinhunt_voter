@@ -1,0 +1,17 @@
+{
+  "name": "coinhunt-voter",
+  "version": "0.0.1",
+  "description": "Bot voter for coinhunt",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "author": "szkkteam",
+  "license": "ISC",
+  "dependencies": {
+    "n-readlines": "^1.0.1",
+    "puppeteer": "^9.1.1",
+    "puppeteer-core": "^9.1.1"
+  }
+}
