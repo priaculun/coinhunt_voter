@@ -1,6 +1,10 @@
 const puppeteer = require("puppeteer");
 const lineByLine = require("n-readlines");
 const randomUseragent = require("random-useragent");
+const tr = require("tor-request");
+
+tr.setTorAddress("localhost", 9050);
+tr.TorControlPort.password = "powerteam";
 
 /**
  * Coinhunt.cc robot voter
@@ -80,16 +84,17 @@ let votes_failed = 0;
 
 async function vote(proxy) {
   const options = {
-    args: [`--proxy-server=https=${proxy.ip}:${proxy.port}`],
+    args: [`--proxy-server=socks5://127.0.0.1:9050`],
     ...launchOptions,
   };
   const browser = await puppeteer.launch(options);
+  //   const browser = await puppeteer.launch(launchOptions);
   const page = await browser.newPage();
 
-  await page.authenticate({
-    username: proxy.username,
-    password: proxy.password,
-  });
+  //   await page.authenticate({
+  //     username: proxy.username,
+  //     password: proxy.password,
+  //   });
 
   await page.setUserAgent(randomUseragent.getRandom());
 
@@ -105,31 +110,33 @@ async function vote(proxy) {
     }
   });
 
-  await page.goto("https://coinhunt.cc/");
+  await page.goto("https://coinhunt.cc/", 20000);
+  const data = await page.evaluate(() => document.querySelector("*").outerHTML);
+  console.log(data);
 
-  const allTimeBest =
-    '//a[contains(concat(" ",normalize-space(@class)," ")," nav-item ")][1]';
-  await page.waitForXPath(allTimeBest);
+  //   const allTimeBest =
+  //     '//a[contains(concat(" ",normalize-space(@class)," ")," nav-item ")][1]';
+  //   await page.waitForXPath(allTimeBest);
 
   // Navigate to the all time best page
-  let allTimeBestButton = await page.$x(allTimeBest);
-  await allTimeBestButton[0].click();
+  //   let allTimeBestButton = await page.$x(allTimeBest);
+  //   await allTimeBestButton[0].click();
 
   // Sleep 1 sec. If sleep is not initiated it will throw an exception.
   await new Promise((resolve) => setTimeout(resolve, 1000));
 
   // Wait for the ShowMore button to be visible
-  const showMore =
-    '//div[contains(concat(" ",normalize-space(@class)," ")," Landing_RowShowAll__2CnUX ")]';
-  await page.waitForXPath(showMore);
+  //   const showMore =
+  //     '//div[contains(concat(" ",normalize-space(@class)," ")," Landing_RowShowAll__2JH_o ")]';
+  //   await page.waitForXPath(showMore);
 
-  let showMoreButton = await page.$x(showMore);
-  await showMoreButton[0].click();
+  //   let showMoreButton = await page.$x(showMore);
+  //   await showMoreButton[0].click();
 
   // Wait for the 11th element to load the full list. By default only 10 element shown
-  const fullListXpath =
-    '//div[contains(concat(" ",normalize-space(@class)," ")," fade ")][contains(concat(" ",normalize-space(@class)," ")," active ")]//div[contains(concat(" ",normalize-space(@class)," ")," Landing_RowContain__2mn6k ")][11]';
-  await page.waitForXPath(fullListXpath);
+  //   const fullListXpath =
+  //     '//div[contains(concat(" ",normalize-space(@class)," ")," fade ")][contains(concat(" ",normalize-space(@class)," ")," active ")]//div[contains(concat(" ",normalize-space(@class)," ")," Landing_RowContain__2mn6k ")][11]';
+  //   await page.waitForXPath(fullListXpath);
 
   async function voteForToken(token) {
     // Xpath for the token, if the IP is already voted, the selector won't find it. (This is the expected behaviour)
@@ -154,9 +161,16 @@ async function vote(proxy) {
       await voteForToken(token);
     }
   } else {
+    console.log(`IP: ${proxy.ip}:${proxy.port} Error`);
     await voteForToken(tokenCode);
   }
 
+  tr.newTorSession((err) => {
+    console.log(err);
+    return;
+  });
+
+  await page.screenshot();
   await browser.close();
 }
 
